@@ -40,7 +40,7 @@ program
     let serverId: string = options.serverId || process.env.SERVER_ID || '';
     let nodeToken: string = options.token || process.env.NODE_TOKEN || '';
     const port = parseInt(options.port || process.env.PORT || '4100');
-    const gatewayUrl: string = options.gateway || process.env.GATEWAY_URL || 'http://localhost:3000';
+    const gatewayUrl: string = options.gateway || process.env.GATEWAY_URL || 'https://gateway.alfychat.app';
     const dataDir: string = path.resolve(options.dataDir || process.env.DATA_DIR || './alfychat-data');
     const envPath = path.resolve(process.cwd(), '.env');
 

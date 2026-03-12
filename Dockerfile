@@ -11,6 +11,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+# Utiliser .env.example comme .env par défaut si aucun .env n'est monté
+RUN cp -n .env.example .env 2>/dev/null || true
+
 # Dossier de données persistant (SQLite + uploads)
 RUN mkdir -p /data
 VOLUME /data
