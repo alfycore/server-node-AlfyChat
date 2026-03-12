@@ -34,7 +34,7 @@ program
   .option('--token <token>', 'Token d\'authentification du nœud')
   .option('--name <name>', 'Nom du serveur (utilisé lors de l\'enregistrement automatique)')
   .option('--port <port>', 'Port HTTP local', '4100')
-  .option('--gateway <url>', 'URL du gateway AlfyChat', 'http://localhost:3000')
+  .option('--gateway <url>', 'URL du gateway AlfyChat', 'https://gateway.alfychat.app')
   .option('--data-dir <dir>', 'Dossier de données (SQLite + uploads)', './alfychat-data')
   .action(async (options) => {
     let serverId: string = options.serverId || process.env.SERVER_ID || '';
