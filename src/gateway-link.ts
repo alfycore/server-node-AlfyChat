@@ -24,6 +24,22 @@ export interface RegisteredCredentials {
 
 let socket: Socket | null = null;
 
+// ── Cache pour le schéma de la table messages ──
+let schemaChecked = false;
+let hasServerIdCol = false;
+let hasIsSystemCol = false;
+
+function checkMessageSchema(): void {
+  if (schemaChecked) return;
+  try {
+    const db = getDb();
+    const info = db.prepare("PRAGMA table_info(messages)").all() as any[];
+    hasServerIdCol = info.some((col: any) => col.name === 'server_id');
+    hasIsSystemCol = info.some((col: any) => col.name === 'is_system');
+    schemaChecked = true;
+  } catch { /* will retry next time */ }
+}
+
 // ── Broadcast helper — envoie un événement à tous les membres via le gateway ──
 export function broadcast(event: string, data: any): void {
   if (socket?.connected) {
@@ -114,21 +130,8 @@ export function connectToGateway(config: ServerNodeConfig): Socket {
         return;
       }
 
-      // Déterminer si la table a une colonne server_id (anciens schémas)
-      const hasServerIdCol = (() => {
-        try {
-          const info = db.prepare("PRAGMA table_info(messages)").all() as any[];
-          return info.some((col: any) => col.name === 'server_id');
-        } catch { return false; }
-      })();
-
-      // Déterminer si la table a is_system
-      const hasIsSystemCol = (() => {
-        try {
-          const info = db.prepare("PRAGMA table_info(messages)").all() as any[];
-          return info.some((col: any) => col.name === 'is_system');
-        } catch { return false; }
-      })();
+      // Utiliser le cache du schéma (évite PRAGMA sur chaque message)
+      checkMessageSchema();
 
       if (hasServerIdCol) {
         const cols = `id, channel_id, server_id, sender_id, sender_username, sender_display_name, sender_avatar_url, content, attachments, reply_to_id, created_at, updated_at${hasIsSystemCol ? ', is_system' : ''}`;
