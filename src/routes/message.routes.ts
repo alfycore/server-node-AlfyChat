@@ -12,7 +12,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (!channelId) return res.status(400).json({ error: 'channelId requis' });
 
     const messages = await messageService.getHistory(channelId, before, parseInt(limit));
-    res.json(messages.map(formatMessage));
+    res.json(messages);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -27,9 +27,18 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'content ou attachments requis' });
     }
 
-    const result = await messageService.create({ channelId, senderId, sender, content, attachments, replyToId });
+    const result = await messageService.create({
+      channelId,
+      senderId,
+      senderUsername: sender?.username || senderId,
+      senderDisplayName: sender?.displayName,
+      senderAvatarUrl: sender?.avatarUrl,
+      content,
+      attachments,
+      replyToId,
+    });
     if (result && 'error' in result) return res.status(404).json(result);
-    res.status(201).json(result ? formatMessage(result) : null);
+    res.status(201).json(result ?? null);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -44,7 +53,7 @@ router.patch('/:messageId', async (req: Request, res: Response) => {
       const status = result.error === 'Non autorisé' ? 403 : 404;
       return res.status(status).json(result);
     }
-    res.json(formatMessage(result));
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -53,8 +62,7 @@ router.patch('/:messageId', async (req: Request, res: Response) => {
 // DELETE /:messageId
 router.delete('/:messageId', async (req: Request, res: Response) => {
   try {
-    const result = await messageService.delete(req.params.messageId);
-    if ('error' in result) return res.status(404).json(result);
+    await messageService.delete(req.params.messageId);
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

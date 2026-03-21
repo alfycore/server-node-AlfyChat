@@ -9,7 +9,7 @@ const inviteService = new InviteService();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const invites = await inviteService.list();
-    res.json(invites.map(formatInvite));
+    res.json(invites);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -22,12 +22,12 @@ router.post('/', async (req: Request, res: Response) => {
     if (!creatorId) return res.status(400).json({ error: 'creatorId requis' });
 
     const invite = await inviteService.create({
+      serverId: process.env.SERVER_ID || '',
       creatorId,
       maxUses: req.body.maxUses,
       expiresIn: req.body.expiresIn,
-      channelId: req.body.channelId,
     });
-    res.status(201).json(formatInvite(invite));
+    res.status(201).json(invite);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -46,7 +46,7 @@ router.get('/:code', async (req: Request, res: Response) => {
       return res.status(410).json({ error: 'Invitation épuisée' });
     }
 
-    res.json(formatInvite(invite));
+    res.json(invite);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

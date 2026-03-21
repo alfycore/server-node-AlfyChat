@@ -10,7 +10,7 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const showBanned = req.query.showBanned === 'true';
     const members = await memberService.list(showBanned);
-    res.json(members.map(formatMember));
+    res.json(members);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -21,7 +21,7 @@ router.get('/:userId', async (req: Request, res: Response) => {
   try {
     const member = await memberService.getByUserId(req.params.userId);
     if (!member) return res.status(404).json({ error: 'Membre introuvable' });
-    res.json(formatMember(member));
+    res.json(member);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -37,7 +37,7 @@ router.post('/', async (req: Request, res: Response) => {
     if (result && 'error' in result) {
       return res.status(403).json(result);
     }
-    res.status(201).json(result ? formatMember(result) : null);
+    res.status(201).json(result ?? null);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -48,7 +48,7 @@ router.patch('/:userId', async (req: Request, res: Response) => {
   try {
     const member = await memberService.update(req.params.userId, req.body);
     if (!member) return res.status(404).json({ error: 'Membre introuvable' });
-    res.json(formatMember(member));
+    res.json(member);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

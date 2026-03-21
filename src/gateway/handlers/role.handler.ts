@@ -10,7 +10,7 @@ export function registerRoleHandlers(socket: Socket) {
   socket.on('ROLE_LIST', async (_data: any, callback: Function) => {
     try {
       const roles = await roleService.list();
-      if (typeof callback === 'function') callback({ roles: roles.map(formatRole) });
+      if (typeof callback === 'function') callback({ roles: roles });
     } catch (err: any) {
       if (typeof callback === 'function') callback({ error: err.message });
     }
@@ -22,10 +22,9 @@ export function registerRoleHandlers(socket: Socket) {
         name: data.name,
         color: data.color,
         permissions: data.permissions,
-        mentionable: data.mentionable,
         emoji: data.emoji,
       });
-      const formatted = role ? formatRole(role) : null;
+      const formatted = role ?? null;
       broadcast('ROLE_CREATE', { role: formatted });
       if (typeof callback === 'function') callback({ success: true, role: formatted });
     } catch (err: any) {
@@ -44,7 +43,7 @@ export function registerRoleHandlers(socket: Socket) {
         mentionable: data.mentionable,
         emoji: data.emoji,
       });
-      const formatted = role ? formatRole(role) : null;
+      const formatted = role ?? null;
       broadcast('ROLE_UPDATE', { role: formatted });
       if (typeof callback === 'function') callback({ success: true, role: formatted });
     } catch (err: any) {
@@ -55,11 +54,7 @@ export function registerRoleHandlers(socket: Socket) {
 
   socket.on('ROLE_DELETE', async (data: any, callback: Function) => {
     try {
-      const result = await roleService.delete(data.roleId);
-      if ('error' in result) {
-        if (typeof callback === 'function') callback({ error: result.error });
-        return;
-      }
+      await roleService.delete(data.roleId);
       broadcast('ROLE_DELETE', { roleId: data.roleId });
       if (typeof callback === 'function') callback({ success: true });
     } catch (err: any) {

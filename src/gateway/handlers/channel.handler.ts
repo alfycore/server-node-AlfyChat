@@ -11,7 +11,7 @@ export function registerChannelHandlers(socket: Socket) {
   socket.on('CHANNEL_LIST', async (_data: any, callback: Function) => {
     try {
       const channels = await channelService.list();
-      if (typeof callback === 'function') callback({ channels: channels.map(formatChannel) });
+      if (typeof callback === 'function') callback({ channels: channels });
     } catch (err: any) {
       if (typeof callback === 'function') callback({ error: err.message });
     }
@@ -26,7 +26,7 @@ export function registerChannelHandlers(socket: Socket) {
         parentId: data.parentId,
         isNsfw: data.isNsfw,
       });
-      const formatted = channel ? formatChannel(channel) : null;
+      const formatted = channel ?? null;
       broadcast('CHANNEL_CREATE', { channel: formatted });
       if (typeof callback === 'function') callback({ success: true, channel: formatted });
     } catch (err: any) {
@@ -41,9 +41,8 @@ export function registerChannelHandlers(socket: Socket) {
         name: data.name,
         topic: data.topic,
         position: data.position,
-        type: data.type,
       });
-      const formatted = channel ? formatChannel(channel) : null;
+      const formatted = channel ?? null;
       broadcast('CHANNEL_UPDATE', { channel: formatted });
       if (typeof callback === 'function') callback({ success: true, channel: formatted });
     } catch (err: any) {

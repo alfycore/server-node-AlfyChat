@@ -10,7 +10,7 @@ export function registerMemberHandlers(socket: Socket) {
   socket.on('MEMBER_LIST', async (_data: any, callback: Function) => {
     try {
       const members = await memberService.list();
-      if (typeof callback === 'function') callback({ members: members.map(formatMember) });
+      if (typeof callback === 'function') callback({ members: members });
     } catch (err: any) {
       if (typeof callback === 'function') callback({ error: err.message });
     }
@@ -28,7 +28,7 @@ export function registerMemberHandlers(socket: Socket) {
         if (typeof callback === 'function') callback(result);
         return;
       }
-      const formatted = result ? formatMember(result) : null;
+      const formatted = result ?? null;
       broadcast('MEMBER_JOIN', { member: formatted });
       if (typeof callback === 'function') callback({ success: true, member: formatted });
     } catch (err: any) {
@@ -43,7 +43,7 @@ export function registerMemberHandlers(socket: Socket) {
         nickname: data.nickname,
         roleIds: data.roleIds,
       });
-      const formatted = member ? formatMember(member) : null;
+      const formatted = member ?? null;
       broadcast('MEMBER_UPDATE', { member: formatted });
       if (typeof callback === 'function') callback({ success: true, member: formatted });
     } catch (err: any) {

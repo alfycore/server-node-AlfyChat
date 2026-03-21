@@ -9,10 +9,10 @@ export function registerInviteHandlers(socket: Socket) {
   socket.on('INVITE_CREATE', async (data: any, callback: Function) => {
     try {
       const invite = await inviteService.create({
+        serverId: data.serverId || process.env.SERVER_ID || '',
         creatorId: data.creatorId || data.userId,
         maxUses: data.maxUses,
         expiresIn: data.expiresIn,
-        channelId: data.channelId,
       });
       if (typeof callback === 'function') callback({ success: true, code: invite.code, id: invite.id });
     } catch (err: any) {
@@ -24,7 +24,7 @@ export function registerInviteHandlers(socket: Socket) {
   socket.on('INVITE_LIST', async (_data: any, callback: Function) => {
     try {
       const invites = await inviteService.list();
-      if (typeof callback === 'function') callback({ invites: invites.map(formatInvite) });
+      if (typeof callback === 'function') callback({ invites: invites });
     } catch (err: any) {
       if (typeof callback === 'function') callback({ invites: [], error: err.message });
     }

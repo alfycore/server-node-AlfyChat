@@ -10,7 +10,7 @@ const channelService = new ChannelService();
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const channels = await channelService.list();
-    res.json(channels.map(formatChannel));
+    res.json(channels);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -34,7 +34,7 @@ router.post('/', async (req: Request, res: Response) => {
     if (!name?.trim()) return res.status(400).json({ error: 'Le nom du salon est requis' });
 
     const channel = await channelService.create({ name, type: parseChannelType(type ?? 'text'), topic, parentId, isNsfw });
-    res.status(201).json(channel ? formatChannel(channel) : null);
+    res.status(201).json(channel ?? null);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -45,7 +45,7 @@ router.patch('/:channelId', async (req: Request, res: Response) => {
   try {
     const channel = await channelService.update(req.params.channelId, req.body);
     if (!channel) return res.status(404).json({ error: 'Salon introuvable' });
-    res.json(formatChannel(channel));
+    res.json(channel);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -66,8 +66,8 @@ router.put('/reorder', async (req: Request, res: Response) => {
   try {
     const { order } = req.body;
     if (!Array.isArray(order)) return res.status(400).json({ error: 'order[] requis' });
-    const channels = await channelService.reorder(order);
-    res.json(channels.map(formatChannel));
+    await channelService.reorder(order);
+    res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

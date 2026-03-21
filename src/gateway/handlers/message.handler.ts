@@ -28,7 +28,7 @@ export function registerMessageHandlers(socket: Socket) {
         return;
       }
 
-      const message = formatMessage(result!);
+      const message = result!;
       broadcast('MSG_BROADCAST', { channelId: data.channelId, message });
       if (typeof callback === 'function') callback({ success: true, message });
     } catch (err: any) {
@@ -46,7 +46,7 @@ export function registerMessageHandlers(socket: Socket) {
         data.limit || 50,
       );
       if (typeof callback === 'function') {
-        callback({ messages: messages.map(formatMessage) });
+        callback({ messages: messages });
       }
     } catch (err: any) {
       logger.error(`MSG_HISTORY: ${err.message}`);
@@ -73,11 +73,7 @@ export function registerMessageHandlers(socket: Socket) {
   // ── Delete message ──
   socket.on('MSG_DELETE', async (data: any, callback: Function) => {
     try {
-      const result = await messageService.delete(data.messageId);
-      if ('error' in result) {
-        if (typeof callback === 'function') callback({ error: result.error });
-        return;
-      }
+      await messageService.delete(data.messageId);
       broadcast('MSG_DELETE', { messageId: data.messageId, channelId: data.channelId });
       if (typeof callback === 'function') callback({ success: true });
     } catch (err: any) {
