@@ -1,25 +1,25 @@
-FROM node:24-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lockb* ./
 COPY prisma/ ./prisma/
-RUN npm install
-RUN npx prisma generate
+RUN bun install
+RUN bunx prisma generate
 
 COPY tsconfig.json ./
 COPY src/ ./src/
-RUN npm run build
+RUN bun run build
 
 # ── Production stage ──
-FROM node:24-alpine
+FROM oven/bun:1-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json bun.lockb* ./
 COPY prisma/ ./prisma/
-RUN npm install --omit=dev
-RUN npx prisma generate
+RUN bun install --production
+RUN bunx prisma generate
 
 COPY --from=builder /app/dist ./dist
 
@@ -30,4 +30,4 @@ ENV PORT=4100
 
 EXPOSE 4100
 
-CMD ["npm", "start"]
+CMD ["bun", "run", "start"]

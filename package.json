@@ -3,13 +3,14 @@
   "version": "2.0.0",
   "description": "AlfyChat self-hosted community server node",
   "main": "dist/index.js",
+  "packageManager": "bun",
   "bin": {
     "alfychat-server": "dist/index.js"
   },
   "scripts": {
-    "dev": "prisma generate && ts-node-dev --transpile-only src/index.ts start",
+    "dev": "prisma generate && bun --hot src/index.ts start",
     "build": "prisma generate && tsc",
-    "start": "node dist/index.js start",
+    "start": "bun dist/index.js start",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push"
   },
@@ -40,7 +41,6 @@
     "@types/node": "^20.11.19",
     "@types/uuid": "^9.0.7",
     "prisma": "^6.5.0",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.3"
   }
 }
