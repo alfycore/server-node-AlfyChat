@@ -13,7 +13,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const bot = await botService.register(name, ownerId);
     res.status(201).json(bot);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -23,7 +23,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const bots = await botService.list();
     res.json(bots);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -33,7 +33,7 @@ router.delete('/:botId', async (req: Request, res: Response) => {
     await botService.delete(req.params.botId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

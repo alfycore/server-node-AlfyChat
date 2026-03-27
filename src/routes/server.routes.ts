@@ -10,7 +10,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const data = await serverService.getFullServerData();
     res.json(data);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -21,7 +21,7 @@ router.patch('/', async (req: Request, res: Response) => {
     const result = await serverService.updateServerInfo({ name, description, iconUrl, bannerUrl, isPublic });
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

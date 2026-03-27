@@ -11,7 +11,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const invites = await inviteService.list();
     res.json(invites);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -29,7 +29,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
     res.status(201).json(invite);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -48,7 +48,7 @@ router.get('/:code', async (req: Request, res: Response) => {
 
     res.json(invite);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -59,7 +59,7 @@ router.post('/:code/use', async (req: Request, res: Response) => {
     if ('error' in result) return res.status(410).json(result);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -69,7 +69,7 @@ router.delete('/:inviteId', async (req: Request, res: Response) => {
     await inviteService.delete(req.params.inviteId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

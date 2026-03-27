@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { MessageService } from '../services/message.service';
 import { formatMessage } from '../utils/format';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const messageService = new MessageService();
@@ -14,7 +15,8 @@ router.get('/', async (req: Request, res: Response) => {
     const messages = await messageService.getHistory(channelId, before, parseInt(limit));
     res.json(messages);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    logger.error('GET /messages error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -40,7 +42,8 @@ router.post('/', async (req: Request, res: Response) => {
     if (result && 'error' in result) return res.status(404).json(result);
     res.status(201).json(result ?? null);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    logger.error('POST /messages error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -55,7 +58,8 @@ router.patch('/:messageId', async (req: Request, res: Response) => {
     }
     res.json(result);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    logger.error('PATCH /messages error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -65,7 +69,8 @@ router.delete('/:messageId', async (req: Request, res: Response) => {
     await messageService.delete(req.params.messageId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    logger.error('DELETE /messages error:', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
