@@ -12,7 +12,7 @@ router.get('/', async (req: Request, res: Response) => {
     const members = await memberService.list(showBanned);
     res.json(members);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -23,7 +23,7 @@ router.get('/:userId', async (req: Request, res: Response) => {
     if (!member) return res.status(404).json({ error: 'Membre introuvable' });
     res.json(member);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -39,7 +39,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
     res.status(201).json(result ?? null);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -50,7 +50,7 @@ router.patch('/:userId', async (req: Request, res: Response) => {
     if (!member) return res.status(404).json({ error: 'Membre introuvable' });
     res.json(member);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -60,7 +60,7 @@ router.delete('/:userId', async (req: Request, res: Response) => {
     await memberService.kick(req.params.userId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -70,7 +70,7 @@ router.post('/:userId/ban', async (req: Request, res: Response) => {
     await memberService.ban(req.params.userId, req.body.reason);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -80,7 +80,7 @@ router.delete('/:userId/ban', async (req: Request, res: Response) => {
     await memberService.unban(req.params.userId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

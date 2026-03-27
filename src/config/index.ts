@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -63,7 +64,7 @@ export function loadConfig(cliOptions?: Record<string, string>): AppConfig {
       nodeToken: cliOptions?.token || process.env.NODE_TOKEN || '',
     },
     jwt: {
-      secret: process.env.JWT_SECRET || 'alfychat-node-secret-change-me',
+      secret: process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex'),
       expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     },
   };

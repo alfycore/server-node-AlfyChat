@@ -11,7 +11,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const roles = await roleService.list();
     res.json(roles);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -24,7 +24,7 @@ router.post('/', async (req: Request, res: Response) => {
     const role = await roleService.create({ name, color, permissions, emoji });
     res.status(201).json(role ?? null);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -35,7 +35,7 @@ router.patch('/:roleId', async (req: Request, res: Response) => {
     if (!role) return res.status(404).json({ error: 'Rôle introuvable' });
     res.json(role);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -45,7 +45,7 @@ router.delete('/:roleId', async (req: Request, res: Response) => {
     await roleService.delete(req.params.roleId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -57,7 +57,7 @@ router.put('/reorder', async (req: Request, res: Response) => {
     await roleService.reorder(order);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 

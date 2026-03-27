@@ -12,7 +12,7 @@ router.get('/', async (_req: Request, res: Response) => {
     const channels = await channelService.list();
     res.json(channels);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -23,7 +23,7 @@ router.get('/:channelId', async (req: Request, res: Response) => {
     if (!channel) return res.status(404).json({ error: 'Salon introuvable' });
     res.json(formatChannel(channel));
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -36,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
     const channel = await channelService.create({ name, type: parseChannelType(type ?? 'text'), topic, parentId, isNsfw });
     res.status(201).json(channel ?? null);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -47,7 +47,7 @@ router.patch('/:channelId', async (req: Request, res: Response) => {
     if (!channel) return res.status(404).json({ error: 'Salon introuvable' });
     res.json(channel);
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -57,7 +57,7 @@ router.delete('/:channelId', async (req: Request, res: Response) => {
     await channelService.delete(req.params.channelId);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
@@ -69,7 +69,7 @@ router.put('/reorder', async (req: Request, res: Response) => {
     await channelService.reorder(order);
     res.json({ success: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
