@@ -1,15 +1,31 @@
 import { Socket } from 'socket.io-client';
 import { MessageService } from '../../services/message.service';
+import { PermissionService } from '../../services/permission.service';
+import { Permission } from '../../enums/Permission';
 import { formatMessage } from '../../utils/format';
 import { broadcast } from '../broadcast';
 import { logger } from '../../utils/logger';
 
 const messageService = new MessageService();
+const permissionService = new PermissionService();
 
 export function registerMessageHandlers(socket: Socket) {
   // ── Receive message from gateway, store, broadcast ──
   socket.on('MSG_FORWARD', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: SEND_MESSAGES in this channel ──
+      if (data.senderId && data.channelId) {
+        const allowed = await permissionService.hasChannelPermission(
+          data.senderId,
+          data.channelId,
+          Permission.SEND_MESSAGES,
+        );
+        if (!allowed) {
+          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+          return;
+        }
+      }
+
       const result = await messageService.create({
         channelId: data.channelId,
         serverId: data.serverId,
@@ -40,6 +56,19 @@ export function registerMessageHandlers(socket: Socket) {
   // ── Message history ──
   socket.on('MSG_HISTORY', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: VIEW_CHANNELS + READ_HISTORY ──
+      if (data.userId && data.channelId) {
+        const allowed = await permissionService.hasChannelPermission(
+          data.userId,
+          data.channelId,
+          Permission.VIEW_CHANNELS,
+        );
+        if (!allowed) {
+          if (typeof callback === 'function') callback({ messages: [] });
+          return;
+        }
+      }
+
       const messages = await messageService.getHistory(
         data.channelId,
         data.before,
@@ -73,6 +102,22 @@ export function registerMessageHandlers(socket: Socket) {
   // ── Delete message ──
   socket.on('MSG_DELETE', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: owner can always delete own; others need MANAGE_MESSAGES ──
+      if (data.userId && data.channelId) {
+        const msg = await messageService.getById(data.messageId);
+        if (msg && msg.senderId !== data.userId) {
+          const allowed = await permissionService.hasChannelPermission(
+            data.userId,
+            data.channelId,
+            Permission.MANAGE_MESSAGES,
+          );
+          if (!allowed) {
+            if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+            return;
+          }
+        }
+      }
+
       await messageService.delete(data.messageId);
       broadcast('MSG_DELETE', { messageId: data.messageId, channelId: data.channelId });
       if (typeof callback === 'function') callback({ success: true });

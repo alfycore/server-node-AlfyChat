@@ -3,6 +3,11 @@ import { formatMessage } from '../utils/format';
 import { v4 as uuid } from 'uuid';
 
 export class MessageService {
+  async getById(messageId: string) {
+    const prisma = getPrisma();
+    return prisma.message.findUnique({ where: { id: messageId } });
+  }
+
   async getHistory(channelId: string, before?: string, limit = 50) {
     const prisma = getPrisma();
     const messages = await prisma.message.findMany({

@@ -1,11 +1,14 @@
 import { Socket } from 'socket.io-client';
 import { ChannelService } from '../../services/channel.service';
+import { PermissionService } from '../../services/permission.service';
+import { Permission } from '../../enums/Permission';
 import { formatChannel } from '../../utils/format';
 import { parseChannelType } from '../../enums/ChannelType';
 import { broadcast } from '../broadcast';
 import { logger } from '../../utils/logger';
 
 const channelService = new ChannelService();
+const permissionService = new PermissionService();
 
 export function registerChannelHandlers(socket: Socket) {
   socket.on('CHANNEL_LIST', async (_data: any, callback: Function) => {
@@ -19,6 +22,15 @@ export function registerChannelHandlers(socket: Socket) {
 
   socket.on('CHANNEL_CREATE', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: MANAGE_CHANNELS ──
+      if (data.userId) {
+        const base = await permissionService.computeMemberPermissions(data.userId);
+        if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.MANAGE_CHANNELS)) {
+          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+          return;
+        }
+      }
+
       const channel = await channelService.create({
         name: data.name,
         type: parseChannelType(data.type ?? 'text'),
@@ -37,6 +49,19 @@ export function registerChannelHandlers(socket: Socket) {
 
   socket.on('CHANNEL_UPDATE', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: MANAGE_CHANNELS (base or channel-level) ──
+      if (data.userId && data.channelId) {
+        const allowed = await permissionService.hasChannelPermission(
+          data.userId,
+          data.channelId,
+          Permission.MANAGE_CHANNELS,
+        );
+        if (!allowed) {
+          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+          return;
+        }
+      }
+
       const channel = await channelService.update(data.channelId, {
         name: data.name,
         topic: data.topic,
@@ -53,6 +78,15 @@ export function registerChannelHandlers(socket: Socket) {
 
   socket.on('CHANNEL_DELETE', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: MANAGE_CHANNELS ──
+      if (data.userId) {
+        const base = await permissionService.computeMemberPermissions(data.userId);
+        if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.MANAGE_CHANNELS)) {
+          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+          return;
+        }
+      }
+
       await channelService.delete(data.channelId);
       broadcast('CHANNEL_DELETE', { channelId: data.channelId });
       if (typeof callback === 'function') callback({ success: true });
@@ -81,6 +115,15 @@ export function registerChannelHandlers(socket: Socket) {
 
   socket.on('CHANNEL_PERMS_SET', async (data: any, callback: Function) => {
     try {
+      // ── Permission check: MANAGE_ROLES ──
+      if (data.userId) {
+        const base = await permissionService.computeMemberPermissions(data.userId);
+        if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.MANAGE_ROLES)) {
+          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+          return;
+        }
+      }
+
       await channelService.setPermissions(data.channelId, data.roleId, data.allow || 0, data.deny || 0);
       broadcast('CHANNEL_PERMS_UPDATE', {
         channelId: data.channelId,
