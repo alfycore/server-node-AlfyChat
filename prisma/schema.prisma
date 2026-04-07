@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ServerSelf {
+  id                String   @id @default(uuid())
+  name              String   @default("Mon Serveur")
+  description       String   @default("")
+  iconUrl           String?  @map("icon_url")
+  bannerUrl         String?  @map("banner_url")
+  ownerId           String   @default("") @map("owner_id")
+  isPublic          Boolean  @default(true) @map("is_public")
+  verificationLevel Int      @default(0) @map("verification_level")
+  isVerified        Boolean  @default(false) @map("is_verified")
+  isPartner         Boolean  @default(false) @map("is_partner")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("server_self")
+}
+
+model ServerSelfConfig {
+  id               String  @id @default(uuid())
+  serverId         String  @map("server_id")
+  defaultChannelId String? @map("default_channel_id")
+  systemChannelId  String? @map("system_channel_id")
+  rulesChannelId   String? @map("rules_channel_id")
+  maxMembers       Int     @default(0) @map("max_members")
+  nodeToken        String  @default("") @map("node_token")
+  gatewayServerId  String  @default("") @map("gateway_server_id")
+  locale           String  @default("fr")
+  config           String?
+
+  @@map("server_self_config")
+}
+
+model ServerSelfInvite {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  serverId  String   @map("server_id")
+  creatorId String   @map("creator_id")
+  channelId String?  @map("channel_id")
+  maxUses   Int?     @map("max_uses")
+  uses      Int      @default(0)
+  expiresAt String?  @map("expires_at")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("server_self_invites")
+}
+
+model Channel {
+  id        String   @id @default(uuid())
+  name      String
+  type      Int      @default(0)
+  topic     String   @default("")
+  position  Int      @default(0)
+  parentId  String?  @map("parent_id")
+  isNsfw    Boolean  @default(false) @map("is_nsfw")
+  slowmode  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parent               Channel?                     @relation("ChannelHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children             Channel[]                    @relation("ChannelHierarchy")
+  permissionOverwrites ChannelPermissionOverwrite[]
+  messages             Message[]
+
+  @@map("channels")
+}
+
+model ChannelPermissionOverwrite {
+  channelId  String @map("channel_id")
+  targetId   String @map("target_id")
+  targetType String @default("role") @map("target_type")
+  allow      Int    @default(0)
+  deny       Int    @default(0)
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, targetId])
+  @@map("channel_permissions")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String
+  color       String   @default("#99AAB5")
+  permissions Int      @default(0)
+  position    Int      @default(0)
+  isDefault   Boolean  @default(false) @map("is_default")
+  mentionable Boolean  @default(false)
+  emoji       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  memberRoles MemberRole[]
+
+  @@map("roles")
+}
+
+model Member {
+  userId      String   @id @map("user_id")
+  username    String
+  displayName String?  @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  nickname    String?
+  isBanned    Boolean  @default(false) @map("is_banned")
+  banReason   String?  @map("ban_reason")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  memberRoles MemberRole[]
+
+  @@map("members")
+}
+
+model MemberRole {
+  memberId String @map("member_id")
+  roleId   String @map("role_id")
+
+  member Member @relation(fields: [memberId], references: [userId], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([memberId, roleId])
+  @@map("member_roles")
+}
+
+model Message {
+  id                String   @id @default(uuid())
+  channelId         String   @map("channel_id")
+  serverId          String   @default("") @map("server_id")
+  senderId          String   @map("sender_id")
+  senderUsername    String   @map("sender_username")
+  senderDisplayName String?  @map("sender_display_name")
+  senderAvatarUrl   String?  @map("sender_avatar_url")
+  content           String   @default("")
+  attachments       String   @default("[]")
+  replyToId         String?  @map("reply_to_id")
+  threadParentId    String?  @map("thread_parent_id")
+  isEdited          Boolean  @default(false) @map("is_edited")
+  isDeleted         Boolean  @default(false) @map("is_deleted")
+  isSystem          Boolean  @default(false) @map("is_system")
+  isPinned          Boolean  @default(false) @map("is_pinned")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+
+  @@index([channelId, createdAt])
+  @@map("messages")
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  messageId String   @map("message_id")
+  userId    String   @map("user_id")
+  emoji     String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@map("reactions")
+}
+
+model FileUpload {
+  id           String   @id @default(uuid())
+  originalName String   @map("original_name")
+  storedName   String   @map("stored_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  uploaderId   String   @map("uploader_id")
+  channelId    String?  @map("channel_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("files")
+}
+
+model Ban {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  reason      String?
+  moderatorId String?  @map("moderator_id")
+  expiresAt   String?  @map("expires_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("bans")
+}
+
+model Bot {
+  id          String   @id @default(uuid())
+  name        String
+  token       String
+  avatarUrl   String?  @map("avatar_url")
+  ownerId     String   @map("owner_id")
+  permissions Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("bots")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String   @map("actor_id")
+  actionType String   @map("action_type")
+  targetId   String?  @map("target_id")
+  targetType String?  @map("target_type")
+  changes    String?
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
