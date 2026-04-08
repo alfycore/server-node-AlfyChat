@@ -54,4 +54,4 @@ Ouvrir une issue avec :
 
 ## Licence
 
-En contribuant, vous acceptez que vos modifications soient soumises a la [licence AlfyChat](./LICENSE).
+En contribuant, vous acceptez que vos modifications soient soumises à la [licence MIT](./LICENSE).

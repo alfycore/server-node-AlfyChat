@@ -5,7 +5,7 @@ Nœud de serveur communautaire auto-hébergé pour AlfyChat.
 ![Node.js](https://img.shields.io/badge/Bun-1.2-black?logo=bun)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)
-![License](https://img.shields.io/badge/License-Source_Available-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Rôle
 
