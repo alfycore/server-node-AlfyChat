@@ -22,9 +22,6 @@ const ALLOWED_EXTENSIONS = new Set([
 // Allowed MIME type prefixes
 const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/', 'application/pdf', 'text/plain'];
 
-const router = Router();
-const fileService = new FileService();
-
 let uploadsDir = './uploads';
 
 export function setUploadsDir(dir: string): void {

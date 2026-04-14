@@ -216,3 +216,100 @@ model AuditLog {
 
   @@map("audit_logs")
 }
+
+// =============================================
+// NOUVELLES FEATURES
+// =============================================
+
+model ForumPost {
+  id          String   @id @default(uuid())
+  channelId   String   @map("channel_id")
+  authorId    String   @map("author_id")
+  title       String
+  content     String
+  tags        String   @default("[]")
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  isLocked    Boolean  @default(false) @map("is_locked")
+  replyCount  Int      @default(0) @map("reply_count")
+  lastReplyAt DateTime? @map("last_reply_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([channelId, createdAt])
+  @@map("forum_posts")
+}
+
+model ServerEvent {
+  id             String   @id @default(uuid())
+  channelId      String?  @map("channel_id")
+  creatorId      String   @map("creator_id")
+  title          String
+  description    String   @default("")
+  coverUrl       String?  @map("cover_url")
+  location       String?
+  type           String   @default("voice")
+  status         String   @default("scheduled")
+  startsAt       DateTime @map("starts_at")
+  endsAt         DateTime? @map("ends_at")
+  recurrence     String   @default("none")
+  interestedCount Int     @default(0) @map("interested_count")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  interests ServerEventInterest[]
+
+  @@index([startsAt])
+  @@map("server_events")
+}
+
+model ServerEventInterest {
+  eventId   String  @map("event_id")
+  userId    String  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  event ServerEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("server_event_interests")
+}
+
+model AutomodRule {
+  id              String   @id @default(uuid())
+  name            String
+  enabled         Boolean  @default(true)
+  triggerType     String   @map("trigger_type")
+  triggerMetadata String   @default("{}") @map("trigger_metadata")
+  actionType      String   @map("action_type")
+  actionMetadata  String   @default("{}") @map("action_metadata")
+  createdBy       String   @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("automod_rules")
+}
+
+model StageState {
+  channelId   String   @id @map("channel_id")
+  topic       String   @default("")
+  isLive      Boolean  @default(false) @map("is_live")
+  speakerIds  String   @default("[]") @map("speaker_ids")
+  listenerIds String   @default("[]") @map("listener_ids")
+  startedAt   DateTime? @map("started_at")
+  startedBy   String?  @map("started_by")
+
+  @@map("stage_states")
+}
+
+model VoiceMessage {
+  id           String   @id @default(uuid())
+  channelId    String   @map("channel_id")
+  senderId     String   @map("sender_id")
+  senderUsername String  @map("sender_username")
+  senderAvatarUrl String? @map("sender_avatar_url")
+  voiceUrl     String   @map("voice_url")
+  duration     Int?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([channelId, createdAt])
+  @@map("voice_messages")
+}

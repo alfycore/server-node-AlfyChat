@@ -68,6 +68,19 @@ program
         config.gateway.nodeToken = nodeToken;
 
         // Save to .env
+        const dbType = config.db.type;
+        let databaseUrl: string;
+        if (dbType === 'sqlite') {
+          const dbPath = config.db.database.endsWith('.db')
+            ? config.db.database
+            : path.join(dataDir, 'server.db');
+          databaseUrl = `file:${path.resolve(dbPath)}`;
+        } else if (dbType === 'postgres') {
+          databaseUrl = `postgresql://${config.db.username}:${config.db.password}@${config.db.host}:${config.db.port}/${config.db.database}`;
+        } else {
+          databaseUrl = `mysql://${config.db.username}:${config.db.password}@${config.db.host}:${config.db.port}/${config.db.database}`;
+        }
+
         const envContent = [
           `# AlfyChat Server Node v2 — généré automatiquement`,
           `SERVER_ID=${creds.serverId}`,
@@ -75,7 +88,8 @@ program
           `GATEWAY_URL=${gatewayUrl}`,
           `PORT=${port}`,
           `DATA_DIR=${dataDir}`,
-          `DB_TYPE=${config.db.type}`,
+          `DB_TYPE=${dbType}`,
+          `DATABASE_URL=${databaseUrl}`,
         ].join('\n') + '\n';
 
         fs.writeFileSync(envPath, envContent, 'utf8');
