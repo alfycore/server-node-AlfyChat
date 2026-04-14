@@ -58,12 +58,22 @@ export function registerMemberHandlers(socket: Socket) {
   socket.on('MEMBER_KICK', async (data: any, callback: Function) => {
     try {
       // Permission check: KICK_MEMBERS
-      if (data.actorId) {
+      // - selfLeave: l'utilisateur se retire lui-même (actorId === userId)
+      // - systemCleanup: nettoyage automatique du gateway (membres orphelins)
+      // - sinon: actorId OBLIGATOIRE avec permission KICK
+      if (!data.selfLeave && !data.systemCleanup) {
+        if (!data.actorId) {
+          if (typeof callback === 'function') callback({ error: 'ACTOR_REQUIRED' });
+          return;
+        }
         const base = await permissionService.computeMemberPermissions(data.actorId);
         if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.KICK_MEMBERS)) {
           if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
           return;
         }
+      } else if (data.selfLeave && data.actorId !== data.userId) {
+        if (typeof callback === 'function') callback({ error: 'SELF_LEAVE_MISMATCH' });
+        return;
       }
 
       await memberService.kick(data.userId);
@@ -77,13 +87,15 @@ export function registerMemberHandlers(socket: Socket) {
 
   socket.on('MEMBER_BAN', async (data: any, callback: Function) => {
     try {
-      // Permission check: BAN_MEMBERS
-      if (data.actorId) {
-        const base = await permissionService.computeMemberPermissions(data.actorId);
-        if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.BAN_MEMBERS)) {
-          if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
-          return;
-        }
+      // Permission check: BAN_MEMBERS — actorId est OBLIGATOIRE
+      if (!data.actorId) {
+        if (typeof callback === 'function') callback({ error: 'ACTOR_REQUIRED' });
+        return;
+      }
+      const base = await permissionService.computeMemberPermissions(data.actorId);
+      if (!(base & Permission.ADMINISTRATOR) && !(base & Permission.BAN_MEMBERS)) {
+        if (typeof callback === 'function') callback({ error: 'PERMISSION_DENIED' });
+        return;
       }
 
       await memberService.ban(data.userId, data.reason);
