@@ -1,25 +1,47 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { InviteService } from '../services/invite.service';
-import { formatInvite } from '../utils/format';
+import { PermissionService } from '../services/permission.service';
+import { AuthRequest } from '../middleware/auth';
 
 const router = Router();
 const inviteService = new InviteService();
+const permissionService = new PermissionService();
 
-// GET /
-router.get('/', async (_req: Request, res: Response) => {
+// MANAGE_ROLES (0x100) ou ADMIN (0x40) requis pour gérer les invitations
+async function canManageInvites(userId: string): Promise<boolean> {
+  const perms = await permissionService.computeMemberPermissions(userId);
+  return (perms & 0x40) !== 0 || (perms & 0x100) !== 0;
+}
+
+const inviteCreationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Trop d'invitations créées, réessayez dans une minute." },
+});
+
+// GET / — liste des invitations (admin/manager uniquement)
+router.get('/', async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Non authentifié' });
+    if (!(await canManageInvites(userId))) return res.status(403).json({ error: 'Accès refusé' });
+
     const invites = await inviteService.list();
     res.json(invites);
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// POST /
-router.post('/', async (req: Request, res: Response) => {
+// POST / — créer une invitation
+router.post('/', inviteCreationLimiter, async (req: AuthRequest, res: Response) => {
   try {
-    const creatorId = req.body.creatorId || req.body.userId || (req.headers['x-user-id'] as string);
-    if (!creatorId) return res.status(400).json({ error: 'creatorId requis' });
+    const creatorId = req.user?.userId;
+    if (!creatorId) return res.status(401).json({ error: 'Non authentifié' });
+    if (!(await canManageInvites(creatorId))) return res.status(403).json({ error: 'Accès refusé' });
 
     const invite = await inviteService.create({
       serverId: process.env.SERVER_ID || '',
@@ -28,13 +50,13 @@ router.post('/', async (req: Request, res: Response) => {
       expiresIn: req.body.expiresIn,
     });
     res.status(201).json(invite);
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// GET /:code — Verify invite
-router.get('/:code', async (req: Request, res: Response) => {
+// GET /:code — Verify invite (public, utilisé pour preview avant join)
+router.get('/:code', async (req: AuthRequest, res: Response) => {
   try {
     const invite = await inviteService.getByCode(req.params.code);
     if (!invite) return res.status(404).json({ error: 'Invitation introuvable' });
@@ -47,28 +69,32 @@ router.get('/:code', async (req: Request, res: Response) => {
     }
 
     res.json(invite);
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// POST /:code/use
-router.post('/:code/use', async (req: Request, res: Response) => {
+// POST /:code/use — consommer une invitation
+router.post('/:code/use', async (req: AuthRequest, res: Response) => {
   try {
     const result = await inviteService.verify(req.params.code);
     if ('error' in result) return res.status(410).json(result);
     res.json({ success: true });
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// DELETE /:inviteId
-router.delete('/:inviteId', async (req: Request, res: Response) => {
+// DELETE /:inviteId — supprimer une invitation
+router.delete('/:inviteId', async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ error: 'Non authentifié' });
+    if (!(await canManageInvites(userId))) return res.status(403).json({ error: 'Accès refusé' });
+
     await inviteService.delete(req.params.inviteId);
     res.json({ success: true });
-  } catch (err: any) {
+  } catch {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

@@ -15,10 +15,13 @@ export function createApp(config: AppConfig, uploadsDir: string) {
 
   // ── Security & parsing ──
   app.use(helmetMiddleware);
+  const isProduction = process.env.NODE_ENV === 'production';
   app.use(cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
+      // localhost n'est toléré qu'en dev (sinon: un site malveillant ouvert sur
+      // http://localhost:XXXX chez l'utilisateur pourrait parler au node).
+      if (!isProduction && /^http:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       cb(new Error(`CORS: origine non autorisée — ${origin}`));
     },
@@ -45,7 +48,19 @@ export function createApp(config: AppConfig, uploadsDir: string) {
   mountRoutes(app);
 
   // ── Static uploads ──
-  app.use('/uploads', express.static(uploadsDir));
+  // Force tout fichier servi à être téléchargé (jamais rendu), empêche le sniffing MIME,
+  // et bloque toute exécution de script via une CSP stricte côté ressource statique.
+  app.use(
+    '/uploads',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('Content-Disposition', 'attachment');
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+      res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+      next();
+    },
+    express.static(uploadsDir),
+  );
 
   // ── Error handler (must be last) ──
   app.use(errorHandler);

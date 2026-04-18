@@ -10,17 +10,20 @@ import { AuthRequest } from '../middleware/auth';
 const router = Router();
 const fileService = new FileService();
 
-// Allowed extensions — the final defense against disguised file types
+// Allowed extensions — the final defense against disguised file types.
+// NOTE: .svg is intentionally excluded — SVG can embed <script>, which would
+// execute in the origin of /uploads and expose user cookies / tokens (stored XSS).
 const ALLOWED_EXTENSIONS = new Set([
-  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.svg',
+  '.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif',
   '.mp4', '.webm', '.mov', '.avi',
   '.mp3', '.wav', '.ogg', '.flac', '.aac',
   '.pdf',
   '.txt',
 ]);
 
-// Allowed MIME type prefixes
+// Allowed MIME type prefixes — image/svg+xml explicitly blocked below.
 const ALLOWED_MIME_PREFIXES = ['image/', 'video/', 'audio/', 'application/pdf', 'text/plain'];
+const BLOCKED_MIME = new Set(['image/svg+xml']);
 
 let uploadsDir = './uploads';
 
@@ -47,7 +50,8 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    const mimeOk = ALLOWED_MIME_PREFIXES.some((t) => file.mimetype.startsWith(t));
+    const mimeOk = ALLOWED_MIME_PREFIXES.some((t) => file.mimetype.startsWith(t))
+      && !BLOCKED_MIME.has(file.mimetype);
     const extOk = ALLOWED_EXTENSIONS.has(ext);
     if (mimeOk && extOk) {
       cb(null, true);
@@ -92,6 +96,11 @@ router.get('/:filename', (req: Request, res: Response) => {
     return res.status(404).json({ error: 'Fichier non trouvé' });
   }
 
+  // Force download + bloque l'exécution de contenu actif (SVG/HTML déguisé).
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
   // Use { root } to ensure path containment
   res.sendFile(filename, { root: uploadsDir });
 });

@@ -1,10 +1,15 @@
 import { getPrisma } from '../config/database';
 import { formatInvite } from '../utils/format';
 import { v4 as uuid } from 'uuid';
+import { randomInt } from 'crypto';
 
-function generateCode(length = 8): string {
+// 12 chars sur 54 caractères = ~71 bits d'entropie, résistant au brute-force.
+// randomInt utilise CSPRNG (vs Math.random qui est prédictible).
+function generateCode(length = 12): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  let out = '';
+  for (let i = 0; i < length; i++) out += chars[randomInt(chars.length)];
+  return out;
 }
 
 export class InviteService {

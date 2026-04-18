@@ -32,6 +32,7 @@ export interface AppConfig {
     secret: string;
     expiresIn: string;
   };
+  internalSecret: string;
 }
 
 export function loadConfig(cliOptions?: Record<string, string>): AppConfig {
@@ -67,5 +68,9 @@ export function loadConfig(cliOptions?: Record<string, string>): AppConfig {
       secret: process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex'),
       expiresIn: process.env.JWT_EXPIRES_IN || '7d',
     },
+    // Secret partagé avec le gateway. Obligatoire pour que le fallback x-user-id
+    // soit accepté — sinon un attaquant ayant accès au port du node pourrait
+    // usurper n'importe quel utilisateur via un simple header.
+    internalSecret: process.env.INTERNAL_SECRET || '',
   };
 }
