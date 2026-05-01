@@ -132,9 +132,17 @@ program
     }
 
     const { execSync } = await import('child_process');
+    // Detect available package runner (bunx on production, npx as fallback)
+    const pkgRunner = (() => {
+      try { execSync('bunx --version', { stdio: 'ignore' }); return 'bunx'; } catch { /* no bunx */ }
+      try { execSync('npx --version', { stdio: 'ignore' }); return 'npx'; } catch { /* no npx */ }
+      // Last resort: local binary
+      return path.resolve(process.cwd(), 'node_modules', '.bin', 'prisma');
+    })();
+
     // Auto-push schema to DB (creates tables if needed)
     try {
-      execSync('npx prisma db push --skip-generate', { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
+      execSync(`${pkgRunner} prisma db push --skip-generate`, { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
     } catch (pushErr: any) {
       // SQLite ne peut pas modifier des index PRIMARY KEY/UNIQUE en place.
       // Si la DB est vide ou corrompue, --force-reset est sans danger.
@@ -145,7 +153,7 @@ program
       if (isSQLiteConstraintErr && config.db.type === 'sqlite') {
         console.warn('⚠️  Migration SQLite impossible (contrainte index). Réinitialisation automatique de la base...');
         try {
-          execSync('npx prisma db push --force-reset --skip-generate', { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
+          execSync(`${pkgRunner} prisma db push --force-reset --skip-generate`, { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
         } catch (resetErr: any) {
           console.error('❌ Échec de la réinitialisation Prisma :', resetErr?.message ?? String(resetErr));
           process.exit(1);
