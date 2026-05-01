@@ -14,7 +14,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
 
 const program = new Command();
 

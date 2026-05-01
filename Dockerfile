@@ -6,7 +6,7 @@ COPY package.json bun.lockb* ./
 COPY prisma/ ./prisma/
 RUN bun install
 RUN bunx prisma generate
-
+RUN bunx prisma db push --skip-generate
 COPY tsconfig.json ./
 COPY src/ ./src/
 
