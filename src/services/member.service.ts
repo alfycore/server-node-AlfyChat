@@ -26,24 +26,21 @@ export class MemberService {
 
   async join(data: { userId: string; username: string; displayName?: string; avatarUrl?: string }) {
     const prisma = getPrisma();
-    const existing = await prisma.member.findUnique({ where: { userId: data.userId } });
 
-    if (existing) {
-      if (existing.isBanned) throw new Error('USER_BANNED');
-      await prisma.member.update({
-        where: { userId: data.userId },
-        data: { username: data.username, displayName: data.displayName, avatarUrl: data.avatarUrl },
-      });
-    } else {
-      await prisma.member.create({
-        data: {
-          userId: data.userId,
-          username: data.username,
-          displayName: data.displayName || null,
-          avatarUrl: data.avatarUrl || null,
-        },
-      });
-    }
+    // Check ban before upsert
+    const existing = await prisma.member.findUnique({ where: { userId: data.userId }, select: { isBanned: true } });
+    if (existing?.isBanned) throw new Error('USER_BANNED');
+
+    await prisma.member.upsert({
+      where: { userId: data.userId },
+      update: { username: data.username, displayName: data.displayName || null, avatarUrl: data.avatarUrl || null },
+      create: {
+        userId: data.userId,
+        username: data.username,
+        displayName: data.displayName || null,
+        avatarUrl: data.avatarUrl || null,
+      },
+    });
 
     // Assign default role
     const defaultRole = await this.roleService.getDefaultRole();
