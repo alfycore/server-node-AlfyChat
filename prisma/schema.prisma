@@ -3,10 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 model ServerSelf {
   id                String   @id @default(uuid())
   name              String   @default("Mon Serveur")

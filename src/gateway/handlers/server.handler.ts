@@ -22,6 +22,7 @@ export function registerServerHandlers(socket: Socket) {
         description: data.description,
         iconUrl: data.iconUrl,
         bannerUrl: data.bannerUrl,
+        ownerId: data.ownerId,
         isPublic: data.isPublic,
       });
       broadcast('SERVER_UPDATE', result);

@@ -116,4 +116,14 @@ export function registerMemberHandlers(socket: Socket) {
       if (typeof callback === 'function') callback({ error: err.message });
     }
   });
+
+  socket.on('MEMBER_CHECK', async (data: any, callback: Function) => {
+    try {
+      const member = await memberService.getByUserId(data.userId);
+      const isMember = !!member && !member.isBanned;
+      if (typeof callback === 'function') callback({ isMember });
+    } catch (err: any) {
+      if (typeof callback === 'function') callback({ isMember: false });
+    }
+  });
 }

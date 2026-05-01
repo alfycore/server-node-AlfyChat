@@ -31,16 +31,28 @@ export class MemberService {
     const existing = await prisma.member.findUnique({ where: { userId: data.userId }, select: { isBanned: true } });
     if (existing?.isBanned) throw new Error('USER_BANNED');
 
-    await prisma.member.upsert({
-      where: { userId: data.userId },
-      update: { username: data.username, displayName: data.displayName || null, avatarUrl: data.avatarUrl || null },
-      create: {
-        userId: data.userId,
-        username: data.username,
-        displayName: data.displayName || null,
-        avatarUrl: data.avatarUrl || null,
-      },
-    });
+    try {
+      await prisma.member.upsert({
+        where: { userId: data.userId },
+        update: { username: data.username, displayName: data.displayName || null, avatarUrl: data.avatarUrl || null },
+        create: {
+          userId: data.userId,
+          username: data.username,
+          displayName: data.displayName || null,
+          avatarUrl: data.avatarUrl || null,
+        },
+      });
+    } catch (e: any) {
+      // P2002 = race condition: another concurrent request inserted the row first — just update.
+      if (e?.code === 'P2002') {
+        await prisma.member.update({
+          where: { userId: data.userId },
+          data: { username: data.username, displayName: data.displayName || null, avatarUrl: data.avatarUrl || null },
+        });
+      } else {
+        throw e;
+      }
+    }
 
     // Assign default role
     const defaultRole = await this.roleService.getDefaultRole();

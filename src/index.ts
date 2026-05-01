@@ -81,6 +81,7 @@ program
           databaseUrl = `mysql://${config.db.username}:${config.db.password}@${config.db.host}:${config.db.port}/${config.db.database}`;
         }
 
+        const dbProvider = dbType === 'sqlite' ? 'sqlite' : dbType === 'postgres' ? 'postgresql' : 'mysql';
         const envContent = [
           `# AlfyChat Server Node v2 — généré automatiquement`,
           `SERVER_ID=${creds.serverId}`,
@@ -89,6 +90,7 @@ program
           `PORT=${port}`,
           `DATA_DIR=${dataDir}`,
           `DB_TYPE=${dbType}`,
+          `DB_PROVIDER=${dbProvider}`,
           `DATABASE_URL=${databaseUrl}`,
         ].join('\n') + '\n';
 
@@ -140,6 +142,20 @@ program
       return path.resolve(process.cwd(), 'node_modules', '.bin', 'prisma');
     })();
 
+    // Prisma 6+ interdit env() dans le champ provider.
+    // On substitue la valeur réelle avant db push, puis on restaure.
+    const prismaProvider = dbType === 'sqlite' ? 'sqlite' : dbType === 'postgres' ? 'postgresql' : 'mysql';
+    const schemaPath = path.resolve(__dirname, '..', 'prisma', 'schema.prisma');
+    const schemaOriginal = fs.readFileSync(schemaPath, 'utf8');
+    const schemaPatchedForPush = schemaOriginal.replace(
+      /provider\s*=\s*env\("DB_PROVIDER"\)/,
+      `provider = "${prismaProvider}"`
+    );
+    const schemaWasPatched = schemaPatchedForPush !== schemaOriginal;
+    if (schemaWasPatched) {
+      fs.writeFileSync(schemaPath, schemaPatchedForPush, 'utf8');
+    }
+
     // Auto-push schema to DB (creates tables if needed)
     try {
       execSync(`${pkgRunner} prisma db push --skip-generate`, { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
@@ -155,13 +171,17 @@ program
         try {
           execSync(`${pkgRunner} prisma db push --force-reset --skip-generate`, { stdio: 'inherit', cwd: path.resolve(__dirname, '..') });
         } catch (resetErr: any) {
+          if (schemaWasPatched) { fs.writeFileSync(schemaPath, schemaOriginal, 'utf8'); }
           console.error('❌ Échec de la réinitialisation Prisma :', resetErr?.message ?? String(resetErr));
           process.exit(1);
         }
       } else {
+        if (schemaWasPatched) { fs.writeFileSync(schemaPath, schemaOriginal, 'utf8'); }
         console.error('❌ Erreur Prisma db push :', msg);
         process.exit(1);
       }
+    } finally {
+      if (schemaWasPatched) { fs.writeFileSync(schemaPath, schemaOriginal, 'utf8'); }
     }
     const { initializeDatabase } = await import('./config/database');
     await initializeDatabase(config);

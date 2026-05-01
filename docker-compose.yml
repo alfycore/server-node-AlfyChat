@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-alfychat_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-alfychat_node}
+      MYSQL_USER: ${MYSQL_USER:-alfychat}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-alfychat_pass}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-alfychat_root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - node-net
+
+  server-selfhost:
+    image: wiltark/alfychatserverselfhost:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        DB_PROVIDER: mysql
+    restart: always
+    ports:
+      - "${PORT:-4100}:${PORT:-4100}"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GATEWAY_URL: ${GATEWAY_URL:-https://gateway.alfychat.app}
+      PORT: ${PORT:-4100}
+      DB_TYPE: mysql
+      DB_PROVIDER: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-alfychat_node}
+      DB_USER: ${MYSQL_USER:-alfychat}
+      DB_PASS: ${MYSQL_PASSWORD:-alfychat_pass}
+      DATABASE_URL: mysql://${MYSQL_USER:-alfychat}:${MYSQL_PASSWORD:-alfychat_pass}@db:3306/${MYSQL_DATABASE:-alfychat_node}
+      DATA_DIR: /data
+      # Ces variables sont remplies après l'enregistrement automatique
+      SERVER_ID: ${SERVER_ID:-}
+      NODE_TOKEN: ${NODE_TOKEN:-}
+    volumes:
+      - node_data:/data
+      - ./.env:/app/.env
+    networks:
+      - node-net
+
+networks:
+  node-net:
+    driver: bridge
+
+volumes:
+  db_data:
+  node_data:
