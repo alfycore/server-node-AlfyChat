@@ -8,7 +8,8 @@ export interface AuthRequest extends Request {
 }
 
 // timing-safe comparison pour éviter un side-channel temporel sur INTERNAL_SECRET.
-function safeEqual(a: string, b: string): boolean {
+function safeEqual(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
   const ab = Buffer.from(a);
   const bb = Buffer.from(b);
   if (ab.length !== bb.length) return false;
